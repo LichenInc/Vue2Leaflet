@@ -90,6 +90,10 @@ const props = {
   worldCopyJump: {
     type: Boolean,
     default: false
+  },
+  crs: {
+    custom: true,
+    default: undefined
   }
 };
 
@@ -101,7 +105,8 @@ export default {
       zoom:this.zoom,
       minZoom:this.minZoom,
       maxZoom:this.maxZoom,
-      worldCopyJump:this.worldCopyJump
+      worldCopyJump:this.worldCopyJump,
+      crs: this.crs,
     });
     eventsBinder(this, this.mapObject, events);
     propsBinder(this, this.mapObject, props);
