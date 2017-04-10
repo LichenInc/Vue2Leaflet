@@ -610,6 +610,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  worldCopyJump: {
 	    type: Boolean,
 	    default: false
+	  },
+	  crs: {
+	    custom: true,
+	    default: undefined
 	  }
 	};
 	
@@ -621,7 +625,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      zoom: this.zoom,
 	      minZoom: this.minZoom,
 	      maxZoom: this.maxZoom,
-	      worldCopyJump: this.worldCopyJump
+	      worldCopyJump: this.worldCopyJump,
+	      crs: this.crs
 	    });
 	    (0, _eventsBinder2.default)(this, this.mapObject, events);
 	    (0, _propsBinder2.default)(this, this.mapObject, props);
@@ -1356,19 +1361,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	if(content.locals) module.exports = content.locals;
 	// add the styles to the DOM
 	var update = __webpack_require__(38)("27cb3c18", content, true);
-	// Hot Module Replacement
-	if(false) {
-	 // When the styles change, update the <style> tags
-	 if(!content.locals) {
-	   module.hot.accept("!!../../node_modules/css-loader/index.js?minimize!../../node_modules/vue-loader/lib/style-rewriter.js?id=data-v-22963f5a!../../node_modules/vue-loader/lib/selector.js?type=styles&index=0!./Map.vue", function() {
-	     var newContent = require("!!../../node_modules/css-loader/index.js?minimize!../../node_modules/vue-loader/lib/style-rewriter.js?id=data-v-22963f5a!../../node_modules/vue-loader/lib/selector.js?type=styles&index=0!./Map.vue");
-	     if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-	     update(newContent);
-	   });
-	 }
-	 // When the module is disposed, remove the <style> tags
-	 module.hot.dispose(function() { update(); });
-	}
 
 /***/ },
 /* 38 */
@@ -1480,27 +1472,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	}
 	
-	function listToStyles (parentId, list) {
-	  var styles = []
-	  var newStyles = {}
-	  for (var i = 0; i < list.length; i++) {
-	    var item = list[i]
-	    var id = item[0]
-	    var css = item[1]
-	    var media = item[2]
-	    var sourceMap = item[3]
-	    var part = { css: css, media: media, sourceMap: sourceMap }
-	    if (!newStyles[id]) {
-	      part.id = parentId + ':0'
-	      styles.push(newStyles[id] = { id: id, parts: [part] })
-	    } else {
-	      part.id = parentId + ':' + newStyles[id].parts.length
-	      newStyles[id].parts.push(part)
-	    }
-	  }
-	  return styles
-	}
-	
 	function createStyleElement () {
 	  var styleElement = document.createElement('style')
 	  styleElement.type = 'text/css'
@@ -1511,12 +1482,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	function addStyle (obj /* StyleObjectPart */) {
 	  var update, remove
 	  var styleElement = document.querySelector('style[data-vue-ssr-id~="' + obj.id + '"]')
-	  var hasSSR = styleElement != null
 	
-	  // if in production mode and style is already provided by SSR,
-	  // simply do nothing.
-	  if (hasSSR && isProduction) {
-	    return noop
+	  if (styleElement) {
+	    if (isProduction) {
+	      // has SSR styles and in production mode.
+	      // simply do nothing.
+	      return noop
+	    } else {
+	      // has SSR styles but in dev mode.
+	      // for some reason Chrome can't handle source map in server-rendered
+	      // style tags - source maps in <style> only works if the style tag is
+	      // created and inserted dynamically. So we remove the server rendered
+	      // styles and inject new ones.
+	      styleElement.parentNode.removeChild(styleElement)
+	    }
 	  }
 	
 	  if (isOldIE) {
@@ -1527,16 +1506,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    remove = applyToSingletonTag.bind(null, styleElement, styleIndex, true)
 	  } else {
 	    // use multi-style-tag mode in all other cases
-	    styleElement = styleElement || createStyleElement()
+	    styleElement = createStyleElement()
 	    update = applyToTag.bind(null, styleElement)
 	    remove = function () {
 	      styleElement.parentNode.removeChild(styleElement)
 	    }
 	  }
 	
-	  if (!hasSSR) {
-	    update(obj)
-	  }
+	  update(obj)
 	
 	  return function updateStyle (newObj /* StyleObjectPart */) {
 	    if (newObj) {
